@@ -1,7 +1,7 @@
 import { EventEmitter, Injectable } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Subject } from 'rxjs';
-import { AppStore } from '../app.reducer';
+import { AppStore } from '../store/app.reducer';
 
 import { Recipe } from '../recipes/recipe.model';
 import { Ingredient } from '../shared/ingredient.model';
@@ -50,6 +50,11 @@ export class RecipeService {
     //   this.shoppingListService.addIngredient(ingredient);
     // });
     this.store.dispatch(new ShoppingListActions.AddIngredients(ingredients));
+  }
+
+  setRecipes(recipes: Recipe[]) {
+    this._recipes = recipes;
+    this.recipesChanges.next(this._recipes.slice());
   }
 
   addRecipe(recipe: Recipe) {

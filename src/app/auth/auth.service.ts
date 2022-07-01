@@ -5,6 +5,10 @@ import { BehaviorSubject, Subject, throwError } from 'rxjs';
 import { User } from './user.model';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { Store } from '@ngrx/store';
+import { AppStore } from '../store/app.reducer';
+
+import * as AuthActions from './store/auth.actions';
 
 export interface AuthResponseData {
   idToken: string;
@@ -20,13 +24,17 @@ export interface AuthResponseData {
   providedIn: 'root',
 })
 export class AuthService {
-  userSubject: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(
-    null
-  );
+  // userSubject: BehaviorSubject<User | null> = new BehaviorSubject<User | null>(
+  //   null
+  // );
 
   private _tokenExpirationTimer: any;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private store: Store<AppStore>
+  ) {}
 
   signup(email: string, password: string) {
     return this.http
@@ -99,13 +107,24 @@ export class AuthService {
     const expirationDuration =
       new Date(userData._tokenExpirationDate).getTime() - new Date().getTime();
 
-    this.userSubject.next(loadedUser);
-    this.autoLogout(expirationDuration);
+    // this.userSubject.next(loadedUser);
+    this.store.dispatch(
+      new AuthActions.AuthenticateSuccess({
+        email: loadedUser.email as string,
+        userId: loadedUser.id as string,
+        token: loadedUser.token,
+        expirationDate: new Date(userData._tokenExpirationDate),
+        redirect: true,
+      })
+    );
+
+    this.setLogoutTimer(expirationDuration);
   }
 
   logout() {
-    this.userSubject.next(null);
-    this.router.navigate(['/auth']);
+    // this.userSubject.next(null);
+    this.store.dispatch(new AuthActions.Logout());
+    // this.router.navigate(['/auth']);
     localStorage.removeItem('userData');
     if (this._tokenExpirationTimer) {
       clearTimeout(this._tokenExpirationTimer);
@@ -113,10 +132,10 @@ export class AuthService {
     this._tokenExpirationTimer = null;
   }
 
-  autoLogout(expirationDuration: number) {
+  setLogoutTimer(expirationDuration: number) {
     console.log(expirationDuration);
     this._tokenExpirationTimer = setTimeout(() => {
-      this.logout();
+      this.store.dispatch(new AuthActions.Logout());
     }, expirationDuration);
   }
 
@@ -128,9 +147,25 @@ export class AuthService {
   ) {
     const expirationDate = new Date(new Date().getTime() + +expiresIn * 1000);
     const user = new User(email, userId, token, expirationDate);
-    this.userSubject.next(user);
-    this.autoLogout(expiresIn * 1000);
+    this.store.dispatch(
+      new AuthActions.AuthenticateSuccess({
+        email: email,
+        userId: userId,
+        token: token,
+        expirationDate: expirationDate,
+        redirect: true,
+      })
+    );
+    // this.userSubject.next(user);
+    this.setLogoutTimer(expiresIn * 1000);
     localStorage.setItem('userData', JSON.stringify(user));
+  }
+
+  clearLogoutTimer() {
+    if (this._tokenExpirationTimer) {
+      clearTimeout(this._tokenExpirationTimer);
+      this._tokenExpirationTimer = null;
+    }
   }
 
   private _handleError(erroRes: HttpErrorResponse) {

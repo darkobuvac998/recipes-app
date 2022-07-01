@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable, Subscription } from 'rxjs';
-import { AppStore } from '../app.reducer';
+import { AppStore } from '../store/app.reducer';
 import { LoggingService } from '../logging.service';
 import { ShoppingListService } from '../services/shopping-list.service';
 import { ShoppingListStore } from './store/shopping-list.reducer';

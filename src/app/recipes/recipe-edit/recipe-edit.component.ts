@@ -1,14 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  Validators,
-} from '@angular/forms';
+import { FormArray, FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { RecipeService } from 'src/app/services/recipe.service';
+import { AppStore } from 'src/app/store/app.reducer';
 import { Recipe } from '../recipe.model';
 
 @Component({
@@ -24,7 +21,8 @@ export class RecipeEditComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private recipeService: RecipeService,
-    private router: Router
+    private router: Router,
+    private store: Store<AppStore>
   ) {}
 
   ngOnInit(): void {
@@ -64,7 +62,7 @@ export class RecipeEditComponent implements OnInit {
     this.router.navigate(['../'], { relativeTo: this.route });
   }
 
-  onDeleteIngredient(index: number){
+  onDeleteIngredient(index: number) {
     (<FormArray>this.recipeForm.get('ingredients')).removeAt(index);
   }
 
@@ -76,22 +74,34 @@ export class RecipeEditComponent implements OnInit {
 
     if (this.editMode) {
       const recipe = <Recipe>this.recipeService.getRecipe(this.id);
-      recipeName = recipe?.name ?? '';
-      recipeimageUrl = recipe?.imageUrl ?? '';
-      recipeDescription = recipe?.description ?? '';
-      if (recipe['ingredients']) {
-        for (let ingredient of recipe.ingredients) {
-          recipeIngredients.push(
-            new FormGroup({
-              name: new FormControl(ingredient.name, Validators.required),
-              amount: new FormControl(ingredient.amount, [
-                Validators.required,
-                Validators.pattern(/^[1-9]+[0-9]*$/),
-              ]),
-            })
-          );
-        }
-      }
+      this.store
+        .select('recipes')
+        .pipe(
+          map((state) => {
+            return state.recipes.find((item) => {
+              return item.id == this.id;
+            });
+          })
+        )
+        .subscribe((data) => {
+          let recipe = data as Recipe;
+          recipeName = recipe?.name ?? '';
+          recipeimageUrl = recipe?.imageUrl ?? '';
+          recipeDescription = recipe?.description ?? '';
+          if (recipe['ingredients']) {
+            for (let ingredient of recipe.ingredients) {
+              recipeIngredients.push(
+                new FormGroup({
+                  name: new FormControl(ingredient.name, Validators.required),
+                  amount: new FormControl(ingredient.amount, [
+                    Validators.required,
+                    Validators.pattern(/^[1-9]+[0-9]*$/),
+                  ]),
+                })
+              );
+            }
+          }
+        });
     }
 
     this.recipeForm = new FormGroup({

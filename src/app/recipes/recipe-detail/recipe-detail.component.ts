@@ -1,6 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { map, switchMap } from 'rxjs/operators';
 import { RecipeService } from 'src/app/services/recipe.service';
+import { AppStore } from 'src/app/store/app.reducer';
 
 @Component({
   selector: 'app-recipe-detail',
@@ -14,16 +17,31 @@ export class RecipeDetailComponent implements OnInit {
   constructor(
     private recipeService: RecipeService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private store: Store<AppStore>
   ) {}
 
   ngOnInit(): void {
     this.recipeId = +this.route.snapshot.params['id'];
     this.recipe = this.recipeService.getRecipe(this.recipeId);
-    this.route.params.subscribe((params: Params) => {
-      this.recipeId = +params['id'];
-      this.recipe = this.recipeService.getRecipe(this.recipeId);
-    });
+    this.route.params
+      .pipe(
+        map((params) => {
+          return +params['id'];
+        }),
+        switchMap((id) => {
+          this.recipeId = id;
+          return this.store.select('recipes');
+        }),
+        map((state) => {
+          return state.recipes.find((item) => {
+            return item.id == this.recipeId;
+          });
+        })
+      )
+      .subscribe((recipe) => {
+        this.recipe = recipe;
+      });
   }
 
   addIngredientsToShoppingList() {
