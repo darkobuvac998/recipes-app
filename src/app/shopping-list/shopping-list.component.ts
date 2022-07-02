@@ -7,15 +7,25 @@ import { ShoppingListService } from '../services/shopping-list.service';
 import { ShoppingListStore } from './store/shopping-list.reducer';
 import * as ShoppingListActions from './store/shopping-list.actions';
 
+import {
+  divStateAnimation,
+  recipesAdd,
+  recipesAdd2,
+  wildStateAnimation,
+} from './animations';
+
 @Component({
   selector: 'app-shopping-list',
   templateUrl: './shopping-list.component.html',
   styleUrls: ['./shopping-list.component.css'],
   encapsulation: ViewEncapsulation.Emulated, // ShadowDom, None (No view encapsulation, css styles applied globally)
+  animations: [divStateAnimation, wildStateAnimation, recipesAdd, recipesAdd2],
 })
 export class ShoppingListComponent implements OnInit, OnDestroy {
   ingredients$: Observable<ShoppingListStore>;
   private igChangeSub: Subscription;
+  state = 'normal';
+  wildState = 'normal';
 
   constructor(
     private shoppingListService: ShoppingListService,
@@ -41,5 +51,26 @@ export class ShoppingListComponent implements OnInit, OnDestroy {
   onEditItem(index: number) {
     // this.shoppingListService.startedEditing.next(index);
     this.store.dispatch(new ShoppingListActions.StartEdit(index));
+  }
+
+  onShrink() {
+    this.wildState = 'shrunken';
+  }
+
+  onAnimate() {
+    this.state == 'normal'
+      ? (this.state = 'highlighted')
+      : (this.state = 'normal');
+    this.wildState == 'normal'
+      ? (this.wildState = 'highlighted')
+      : (this.wildState = 'normal');
+  }
+
+  animationStarted(event: any) {
+    console.log(event);
+  }
+
+  animationFinished(event: any) {
+    console.log(event);
   }
 }

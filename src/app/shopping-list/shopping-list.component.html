@@ -2,15 +2,30 @@
   <div class="col-sm-10">
     <app-shopping-edit></app-shopping-edit>
     <hr />
+    <!-- <button type="button" (click)="onAnimate()" class="btn btn-warning">
+      Animate
+    </button>
+    <button type="button" (click)="onShrink()" class="btn btn-danger">
+      Shrink
+    </button> -->
     <ul class="list-group">
       <a
-        *ngFor="let ingredient of (ingredients$ | async)?.ingredients; let i = index"
+        *ngFor="
+          let ingredient of (ingredients$ | async)?.ingredients;
+          let i = index
+        "
         class="list-group-item"
         style="cursor: pointer"
         (click)="onEditItem(i)"
+        [@recipesAdd2]
+        (@recipesAdd2.start)="animationStarted($event)"
+        (@recipesAdd2.done)="animationFinished($event)"
       >
         {{ ingredient?.name }} ({{ ingredient?.amount }})
       </a>
+      <!-- <div [@divState]="state" style="width: 100px; height: 100px"></div>
+      <hr />
+      <div [@wildState]="wildState" style="width: 100px; height: 100px"></div> -->
     </ul>
   </div>
 </div>
